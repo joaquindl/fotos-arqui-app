@@ -39,22 +39,11 @@ const BottomTabNavigator = () => {
           ),
         }}
       />
-      {/* <Tab.Screen
-        name="List"
-        component={ListScreen}
-        options={{
-          tabBarLabel: 'Listado',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="format-list-bulleted" color={color} size={size} />
-          ),
-        }}
-      /> */}
       <Tab.Screen
         name="Upload"
         component={PhotoUploadScreen}
         options={{
           tabBarLabel: () => null,
-          // tabBarShowLabel: false,
           tabBarIcon: ({ size }) => (
             <MaterialCommunityIcons name="camera" color='white' size={size} />
           ),

@@ -1,45 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Dimensions, ActivityIndicator, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import MapView from 'react-native-maps';
-import { useNavigation } from '@react-navigation/native';
-import * as Location from 'expo-location';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+// Components
 import SearchBar from '../components/SearchBar';
+import IconButton from '../components/IconButton';
+// Hooks
+import useLocation from '../hooks/useLocation';
 
 const HomeScreen = () => {
-    const [location, setLocation] = useState(null);
-    const [initialRegion, setInitialRegion] = useState(null);
-    const [loading, setLoading] = useState(true);  // Add loading state
+    const [isUserInteracting, setIsUserInteracting] = useState(false);
+    const { location, errorMsg } = useLocation(!isUserInteracting);
     const mapRef = useRef(null);
-
-    useEffect(() => {
-        const subscribeToLocationUpdates = async () => {
-            let {status} = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                console.error('Permission to access location was denied');
-                setLoading(false);  // Set loading false even if permission is denied
-                return;
-            }
-    
-            let currentLocation = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.Balanced,
-                timeout: 5000
-            });
-            if (currentLocation) {
-                const newRegion = {
-                    latitude: currentLocation.coords.latitude,
-                    longitude: currentLocation.coords.longitude,
-                    latitudeDelta: 0.005,
-                    longitudeDelta: 0.005,
-                };
-                setInitialRegion(newRegion);
-                setLocation(currentLocation);
-                setLoading(false);  // Set loading to false after setting the region
-            }
-        };
-    
-        subscribeToLocationUpdates();
-    }, []);
 
     const centerMapOnUser = () => {
         if (location) {
@@ -52,36 +23,45 @@ const HomeScreen = () => {
         }
     };
 
-    const navigation = useNavigation();
-
-    if (loading) {
+    if (errorMsg) {
         return (
-            <View style={styles.container}>
+            <View style={styles.centered}>
+                <Text>{errorMsg}</Text>
+            </View>
+        );
+    }
+
+    if (!location) {
+        return (
+            <View style={styles.centered}>
                 <ActivityIndicator size="large" color="#0000ff" />
             </View>
         );
     }
 
-
-
     return (
-        <View style={styles.container}>
-            <SearchBar placeholder="Buscar..." />
-            <MapView 
-                style={styles.map}
-                ref={mapRef}
-                initialRegion={initialRegion}
-                showsUserLocation={true}
-                showsCompass={false}
-                rotateEnabled = {false}
-            />
-            <TouchableOpacity
-                style={styles.centerButton}
-                onPress={centerMapOnUser}
-            >
-                <MaterialCommunityIcons name="crosshairs-gps" size={24} color="black" />
-            </TouchableOpacity>
-        </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accesible={false}>
+            <View style={styles.container}>
+                <SearchBar placeholder="Buscar..." />
+                <MapView 
+                    style={styles.map}
+                    ref={mapRef}
+                    initialRegion={{
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        latitudeDelta: 0.005,
+                        longitudeDelta: 0.005,
+                    }}
+                    showsUserLocation={true}
+                    showsCompass={false}
+                    rotateEnabled = {false}
+                    onPanDrag={() => setIsUserInteracting(true)}
+                    onRegionChangeComplete={() => setIsUserInteracting(false)}
+                />
+                <IconButton icon="crosshairs-gps" onPress={centerMapOnUser} style={styles.centerButton} />
+            </View>
+        </TouchableWithoutFeedback>
+        
     );
 }
 
